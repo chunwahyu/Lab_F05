@@ -1,5 +1,8 @@
 import {Button, TableCell, TableRow} from "@mui/material";
 import type {Result, VehicleType} from "../../../data/CarParkInfo.type.ts";
+import {useEffect, useState} from "react";
+import type {CarParkVacancyDto} from "../../../data/CarParkVacancyDto.type.ts";
+import {getCarParkVacancyById} from "../../../api/GovOpenDataApi.ts";
 
 interface Props {
   result: Result;
@@ -7,6 +10,17 @@ interface Props {
 }
 
 export default function ResultTableRow({result, vehicleTypeFilter}: Props) {
+
+  const[vacancyDto, setVacancyDto] = useState<CarParkVacancyDto | undefined>(undefined);
+
+  useEffect(() => {
+    const fetchVacancyDto = async () => {
+      const responseData = await getCarParkVacancyById(result.park_Id);
+      setVacancyDto(responseData);
+    }
+    void fetchVacancyDto();
+  }, [result]);
+
   const renderCarParkImage = () => {
     if(!result.renditionUrls) {
       return "https://nftcalendar.io/storage/uploads/2022/02/21/image-not-found_0221202211372462137974b6c1a.png"
@@ -23,6 +37,20 @@ export default function ResultTableRow({result, vehicleTypeFilter}: Props) {
     return "https://nftcalendar.io/storage/uploads/2022/02/21/image-not-found_0221202211372462137974b6c1a.png";
   }
 
+  const renderSpace = () => {
+    return result[vehicleTypeFilter as VehicleType] ? result[vehicleTypeFilter as VehicleType]?.space : "NA";
+  }
+
+  const renderVacancy = () => {
+    if(vacancyDto) {
+      if(vacancyDto.results[0].privateCar) {
+        return vacancyDto.results[0].privateCar[0].vacancy;
+      }
+    }
+
+
+  }
+
   return (
       <TableRow>
         <TableCell>
@@ -33,7 +61,7 @@ export default function ResultTableRow({result, vehicleTypeFilter}: Props) {
         </TableCell>
         <TableCell>{result.name}</TableCell>
         <TableCell>{result.displayAddress}</TableCell>
-        <TableCell>{result[vehicleTypeFilter as VehicleType] ? result[vehicleTypeFilter as VehicleType]?.space : "NA"}</TableCell>
+        <TableCell>{renderVacancy()}/{renderSpace()}</TableCell>
         <TableCell>
           <Button variant="contained"
                   onClick={()=>{
